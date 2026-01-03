@@ -7,11 +7,11 @@ export default function Topbar() {
   };
 
   return (
-    <header className="border-b border-gray-800 px-8 py-4 flex justify-between">
-      <h1 className="font-semibold">Admin Dashboard</h1>
+    <header className="border-b border-gold px-8 py-4 flex justify-between bg-black">
+      <h1 className="font-semibold text-white">Admin Dashboard</h1>
       <button
         onClick={logout}
-        className="text-sm text-red-400 hover:text-red-500"
+        className="text-sm px-4 py-2 rounded bg-gold text-black hover:bg-gold-dark transition-colors font-semibold"
       >
         Logout
       </button>

@@ -17,26 +17,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="bg-gray-900 p-8 rounded w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6">Admin Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="bg-gold p-8 rounded-lg w-full max-w-md border-4 border-black">
+        <h2 className="text-3xl font-bold mb-6 text-black text-center">Admin Login</h2>
 
         <input
-          className="w-full mb-4 p-3 bg-gray-800 rounded"
+          className="w-full mb-4 p-3 bg-white text-black border-2 border-black rounded"
           placeholder="Email"
           onChange={(e) => setEmail(e.target.value)}
         />
 
         <input
           type="password"
-          className="w-full mb-6 p-3 bg-gray-800 rounded"
+          className="w-full mb-6 p-3 bg-white text-black border-2 border-black rounded"
           placeholder="Password"
           onChange={(e) => setPassword(e.target.value)}
         />
 
         <button
           onClick={handleLogin}
-          className="w-full bg-blue-600 py-3 rounded hover:bg-blue-700"
+          className="w-full bg-black text-gold py-3 rounded font-semibold hover:bg-gray-900 transition-colors border-2 border-black"
         >
           Login
         </button>

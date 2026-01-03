@@ -9,7 +9,7 @@ export default function AdminLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-950 text-gray-100">
+      <body className="bg-black text-white">
         <div className="flex min-h-screen">
           <Sidebar />
           <div className="flex-1">
