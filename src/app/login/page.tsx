@@ -9,12 +9,36 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    // Replace with real backend auth later
-    if (email && password) {
-      document.cookie = `token=mock-jwt-token; path=/;`;
-      router.push("/dashboard");
-    }
-  };
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email,
+              password,
+            }),
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Invalid credentials");
+        }
+
+        const data = await res.json();
+
+        // Store JWT in cookie
+        document.cookie = `token=${data.access_token}; path=/; max-age=86400;`;
+
+        router.push("/dashboard");
+      } catch (error: any) {
+        alert(error.message || "Login failed");
+      }
+    };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
