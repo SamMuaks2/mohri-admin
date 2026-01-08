@@ -82,13 +82,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Redirect if already logged in
+  // Check if already authenticated
   useEffect(() => {
-    if (isAuthenticated()) {
-      console.log("Already authenticated, redirecting to dashboard");
-      router.push("/dashboard");
-    }
+    const timer = setTimeout(() => {
+      if (isAuthenticated()) {
+        console.log("Already authenticated, redirecting to dashboard");
+        router.replace("/dashboard");
+      } else {
+        setCheckingAuth(false);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [router]);
 
   const handleLogin = async () => {
@@ -155,16 +162,27 @@ export default function LoginPage() {
 
       console.log("🚀 Redirecting to dashboard...");
       
-      // Force a hard reload to ensure clean state
-      window.location.href = "/dashboard";
+      // Use replace instead of href to avoid full page reload
+      router.replace("/dashboard");
       
     } catch (error: any) {
       console.error("❌ Login error:", error);
       setError(error.message || "Login failed");
-    } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-silver text-lg">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
@@ -183,6 +201,7 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+          disabled={loading}
         />
 
         <input
@@ -192,6 +211,7 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+          disabled={loading}
         />
 
         <button
