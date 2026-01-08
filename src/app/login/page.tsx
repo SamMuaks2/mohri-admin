@@ -97,42 +97,59 @@ export default function LoginPage() {
       setLoading(true);
       setError("");
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: 'include', // Important: allow cookies
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
+      console.log("🔐 Starting login...");
+      console.log("📍 API URL:", process.env.NEXT_PUBLIC_API_URL);
+      console.log("📧 Email:", email);
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/login`;
+      console.log("🌐 Full URL:", url);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      console.log("📥 Response status:", res.status);
+      console.log("📥 Response ok:", res.ok);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ 
           message: "Invalid credentials" 
         }));
+        console.error("❌ Login failed:", errorData);
         throw new Error(errorData.message || "Invalid credentials");
       }
 
       const data = await res.json();
+      console.log("✅ Login successful!");
+      console.log("📦 Response data:", data);
 
-      // Set auth flag (cookie is already set by backend)
+      if (!data.access_token) {
+        console.error("❌ No access_token in response!");
+        throw new Error("No token received");
+      }
+
+      // Set auth flag
       setToken(data.access_token);
+      console.log("✅ Auth flag set");
       
-      // Small delay to ensure state is updated
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Check cookies
+      console.log("🍪 All cookies:", document.cookie);
       
-      // Force a clean navigation
+      // Force navigation
+      console.log("🚀 Redirecting to dashboard...");
       window.location.href = "/dashboard";
       
     } catch (error: any) {
-      console.error("Login error:", error);
-      setError(error.message || "Login failed");
+      console.error("❌ Login error:", error);
+      setError(error.message || "Login failed. Please check the console for details.");
       setLoading(false);
     }
   };
@@ -179,6 +196,11 @@ export default function LoginPage() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+
+        <div className="mt-4 p-3 bg-black text-gold text-xs rounded">
+          <p className="font-semibold mb-1">Debug Info:</p>
+          <p>API: {process.env.NEXT_PUBLIC_API_URL || "NOT SET"}</p>
+        </div>
       </div>
     </div>
   );
