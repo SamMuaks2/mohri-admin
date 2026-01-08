@@ -73,8 +73,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { isAuthenticated, setToken } from "../../lib/auth";
+import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -83,73 +82,43 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Check if already authenticated
-  useEffect(() => {
-    if (isAuthenticated()) {
-      router.replace("/dashboard");
-    }
-  }, [router]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
       setError("");
 
       console.log("🔐 Starting login...");
-      console.log("📍 API URL:", process.env.NEXT_PUBLIC_API_URL);
-      console.log("📧 Email:", email);
+      console.log("🌐 API:", process.env.NEXT_PUBLIC_API_URL);
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/login`;
-      console.log("🌐 Full URL:", url);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      console.log("📥 Response status:", res.status);
-      console.log("📥 Response ok:", res.ok);
+      console.log("📥 Login response:", res.status);
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ 
-          message: "Invalid credentials" 
-        }));
-        console.error("❌ Login failed:", errorData);
-        throw new Error(errorData.message || "Invalid credentials");
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "Invalid credentials");
       }
 
-      const data = await res.json();
-      console.log("✅ Login successful!");
-      console.log("📦 Response data:", data);
+      console.log("✅ Login successful");
+      console.log("🍪 Cookies after login:", document.cookie);
 
-      if (!data.access_token) {
-        console.error("❌ No access_token in response!");
-        throw new Error("No token received");
-      }
-
-      // Set auth flag
-      setToken(data.access_token);
-      console.log("✅ Auth flag set");
-      
-      // Check cookies
-      console.log("🍪 All cookies:", document.cookie);
-      
-      // Force navigation
-      console.log("🚀 Redirecting to dashboard...");
-      window.location.href = "/dashboard";
-      
-    } catch (error: any) {
-      console.error("❌ Login error:", error);
-      setError(error.message || "Login failed. Please check the console for details.");
+      // SPA-safe navigation
+      router.replace("/dashboard");
+    } catch (err: any) {
+      console.error("❌ Login failed:", err);
+      setError(err.message || "Login failed");
       setLoading(false);
     }
   };
@@ -191,14 +160,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-gold py-3 rounded font-semibold hover:bg-gray-900 transition-colors border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-black text-gold py-3 rounded font-semibold border-2 border-black disabled:opacity-50"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         <div className="mt-4 p-3 bg-black text-gold text-xs rounded">
-          <p className="font-semibold mb-1">Debug Info:</p>
+          <p className="font-semibold">Debug</p>
           <p>API: {process.env.NEXT_PUBLIC_API_URL || "NOT SET"}</p>
         </div>
       </div>

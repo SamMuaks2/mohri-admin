@@ -26,7 +26,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "../lib/auth";
 
 export default function ProtectedRoute({
   children,
@@ -34,59 +33,43 @@ export default function ProtectedRoute({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuth, setIsAuth] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // Check local auth flag
-      const hasLocalAuth = isAuthenticated();
-      
-      if (!hasLocalAuth) {
-        router.replace("/login");
-        return;
-      }
-      
-      // Verify with backend that session is still valid
+    const verifyAuth = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/check`,
-          {
-            credentials: 'include',
-          }
+          { credentials: "include" }
         );
-        
-        if (res.ok) {
-          setIsAuth(true);
-        } else {
-          // Session expired, redirect to login
+
+        if (!res.ok) {
           router.replace("/login");
+          return;
         }
+
+        setAuthorized(true);
       } catch (error) {
         console.error("Auth check failed:", error);
         router.replace("/login");
       } finally {
-        setIsChecking(false);
+        setChecking(false);
       }
     };
 
-    checkAuth();
+    verifyAuth();
   }, [router]);
 
-  if (isChecking) {
+  if (checking) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-silver text-lg">Verifying authentication...</p>
-        </div>
+        <p className="text-gold text-lg">Verifying authentication…</p>
       </div>
     );
   }
 
-  if (!isAuth) {
-    return null;
-  }
+  if (!authorized) return null;
 
   return <>{children}</>;
 }
