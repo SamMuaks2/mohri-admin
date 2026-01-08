@@ -75,6 +75,7 @@ export const apiClient = {
   async get(endpoint: string) {
     const res = await fetch(`${API_URL}${endpoint}`, {
       headers: getAuthHeaders(),
+      credentials: 'include', // Important: send cookies
     });
     
     handleAuthError(res);
@@ -90,6 +91,7 @@ export const apiClient = {
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: "POST",
       headers: getAuthHeaders(),
+      credentials: 'include', // Important: send cookies
       body: JSON.stringify(data),
     });
     
@@ -106,6 +108,7 @@ export const apiClient = {
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: "PUT",
       headers: getAuthHeaders(),
+      credentials: 'include', // Important: send cookies
       body: JSON.stringify(data),
     });
     
@@ -122,6 +125,7 @@ export const apiClient = {
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
+      credentials: 'include', // Important: send cookies
     });
     
     handleAuthError(res);

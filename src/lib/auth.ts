@@ -72,161 +72,62 @@
 
 
 
-// Auth helper with HMR-resistant storage
-
-// Use a special key that survives HMR
+// Simplified auth that relies on HTTP-only cookies + localStorage backup
 const TOKEN_KEY = '__app_auth_token__';
 
-export const getToken = (): string | null => {
-  if (typeof window === "undefined") {
-    console.log("getToken: window is undefined (SSR)");
-    return null;
-  }
-  
-  console.log("getToken: checking for token...");
-  
-  // Try localStorage with our special key
+export const setToken = (token: string) => {
+  // Store in localStorage only as a flag (real token is in HTTP-only cookie)
   try {
-    const lsToken = localStorage.getItem(TOKEN_KEY);
-    if (lsToken) {
-      console.log("getToken: Found in localStorage ✅");
-      return lsToken;
-    }
-  } catch (e) {
-    console.error("getToken: localStorage error:", e);
+    localStorage.setItem(TOKEN_KEY, 'authenticated');
+    sessionStorage.setItem(TOKEN_KEY, 'authenticated');
+  } catch (error) {
+    console.error('Failed to set auth flag:', error);
   }
-  
-  // Try sessionStorage as backup (survives HMR better)
-  try {
-    const ssToken = sessionStorage.getItem(TOKEN_KEY);
-    if (ssToken) {
-      console.log("getToken: Found in sessionStorage ✅");
-      // Copy to localStorage for next time
-      localStorage.setItem(TOKEN_KEY, ssToken);
-      return ssToken;
-    }
-  } catch (e) {
-    console.error("getToken: sessionStorage error:", e);
-  }
-  
-  // Try cookie as last resort
-  const cookies = document.cookie.split(';');
-  console.log("getToken: All cookies:", document.cookie);
-  const tokenCookie = cookies.find(c => c.trim().startsWith(`${TOKEN_KEY}=`));
-  
-  if (tokenCookie) {
-    const token = tokenCookie.split('=')[1];
-    console.log("getToken: Found in cookie ✅");
-    // Restore to storage
-    try {
-      localStorage.setItem(TOKEN_KEY, token);
-      sessionStorage.setItem(TOKEN_KEY, token);
-    } catch (e) {
-      console.error("Could not restore token to storage:", e);
-    }
-    return token;
-  }
-  
-  console.log("getToken: No token found anywhere ❌");
-  return null;
 };
 
-export const setToken = (token: string) => {
-  console.log("setToken: Storing token in multiple locations...");
-  
-  // Store in ALL available locations for redundancy
+export const clearToken = () => {
   try {
-    localStorage.setItem(TOKEN_KEY, token);
-    console.log("setToken: localStorage ✅");
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
   } catch (error) {
-    console.error('setToken: localStorage failed:', error);
-  }
-  
-  try {
-    sessionStorage.setItem(TOKEN_KEY, token);
-    console.log("setToken: sessionStorage ✅");
-  } catch (error) {
-    console.error('setToken: sessionStorage failed:', error);
-  }
-  
-  // Set cookie with HttpOnly-safe name and long expiry
-  try {
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 30); // 30 days
-    document.cookie = `${TOKEN_KEY}=${token}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-    console.log("setToken: cookie ✅");
-  } catch (error) {
-    console.error('setToken: cookie failed:', error);
-  }
-  
-  // Verify immediately
-  const lsCheck = localStorage.getItem(TOKEN_KEY);
-  const ssCheck = sessionStorage.getItem(TOKEN_KEY);
-  console.log("setToken: Verification - localStorage:", lsCheck ? "✅" : "❌");
-  console.log("setToken: Verification - sessionStorage:", ssCheck ? "✅" : "❌");
-  
-  // Additional: Store in window for same-session access (survives HMR)
-  if (typeof window !== 'undefined') {
-    (window as any).__auth_token__ = token;
-    console.log("setToken: window property ✅");
+    console.error('Failed to clear auth flag:', error);
   }
 };
 
 export const isAuthenticated = (): boolean => {
-  // Also check window property first (fastest, survives HMR)
-  if (typeof window !== 'undefined' && (window as any).__auth_token__) {
-    console.log('🔐 isAuthenticated check: true (from window)');
-    return true;
-  }
+  if (typeof window === "undefined") return false;
   
-  const token = getToken();
-  const result = !!token;
-  console.log('🔐 isAuthenticated check:', result);
-  if (result) {
-    console.log('   Token exists (first 20 chars):', token!.substring(0, 20) + '...');
-    // Store in window for next check
-    if (typeof window !== 'undefined') {
-      (window as any).__auth_token__ = token;
-    }
+  // Check if we have the auth flag
+  try {
+    const hasFlag = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+    return !!hasFlag;
+  } catch {
+    return false;
   }
-  return result;
 };
 
-export const logout = () => {
-  console.log("logout: Clearing authentication...");
-  
-  // Clear from all locations
+export const logout = async () => {
   try {
-    localStorage.removeItem(TOKEN_KEY);
-    console.log("logout: localStorage cleared ✅");
+    // Call backend logout to clear cookie
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include', // Important: send cookies
+    });
   } catch (error) {
-    console.error('logout: localStorage clear failed:', error);
+    console.error('Logout request failed:', error);
   }
   
-  try {
-    sessionStorage.removeItem(TOKEN_KEY);
-    console.log("logout: sessionStorage cleared ✅");
-  } catch (error) {
-    console.error('logout: sessionStorage clear failed:', error);
-  }
+  // Clear local flags
+  clearToken();
   
-  document.cookie = `${TOKEN_KEY}=; path=/; max-age=0`;
-  console.log("logout: cookie cleared ✅");
-  
-  // Clear window property
-  if (typeof window !== 'undefined') {
-    delete (window as any).__auth_token__;
-    console.log("logout: window property cleared ✅");
-  }
-  
+  // Redirect to login
   window.location.href = "/login";
 };
 
 export const getAuthHeaders = () => {
-  const token = getToken();
+  // The cookie is sent automatically with credentials: 'include'
   return {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
 
