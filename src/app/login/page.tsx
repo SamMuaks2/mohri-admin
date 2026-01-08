@@ -162,8 +162,11 @@ export default function LoginPage() {
 
       console.log("🚀 Redirecting to dashboard...");
       
-      // Use replace instead of href to avoid full page reload
-      router.replace("/dashboard");
+      // Small delay to ensure token is fully stored
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Use window.location for a clean redirect that bypasses any routing issues
+      window.location.href = "/dashboard";
       
     } catch (error: any) {
       console.error("❌ Login error:", error);
