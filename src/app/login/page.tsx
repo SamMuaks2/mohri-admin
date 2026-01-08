@@ -201,11 +201,6 @@ export default function LoginPage() {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
-
-        <div className="mt-4 text-center text-sm text-black">
-          <p>Default credentials:</p>
-          <p className="font-mono">admin@mohri.com / admin123</p>
-        </div>
       </div>
     </div>
   );
