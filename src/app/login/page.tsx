@@ -151,10 +151,20 @@ export default function LoginPage() {
 
   // Checking if already authenticated
   useEffect(() => {
-    if (isAuthenticated()) {
-      console.log("Already authenticated, redirecting...");
-      router.replace("/dashboard");
-    }
+    const checkAuth = () => {
+      const hasAuth = isAuthenticated();
+      console.log("Login page - Auth check:", hasAuth);
+      
+      if (hasAuth) {
+        console.log("Already authenticated, redirecting...");
+        // Using replace to avoid back button issues
+        router.replace("/dashboard");
+      }
+    };
+    
+    // Adding small delay to ensure storage is ready
+    const timer = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timer);
   }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -201,19 +211,19 @@ export default function LoginPage() {
       console.log("💾 Storing token in localStorage...");
       setToken(data.access_token);
       
-      // Verifying it was stored
+      // Verifying it was stored immediately
+      await new Promise(resolve => setTimeout(resolve, 100));
       const stored = localStorage.getItem('__app_auth_token__');
-      console.log("✅ Token stored:", stored ? "YES" : "NO");
+      console.log("✅ Token stored verification:", stored ? "YES" : "NO");
       
       if (!stored) {
+        console.error("❌ Token storage failed!");
         throw new Error("Failed to store authentication token");
       }
       
-      // Adding small delay to ensure state is fully updated
-      await new Promise(resolve => setTimeout(resolve, 200));
+      console.log("🚀 Auth successful, forcing page reload to dashboard...");
       
-      console.log("🚀 Redirecting to dashboard...");
-      // Using window.location for a hard redirect
+      // Forcing a complete page reload to the dashboard
       window.location.href = "/dashboard";
       
     } catch (error: any) {
