@@ -1,998 +1,7 @@
-// "use client";
-
-// import ProtectedRoute from "../../components/ProtectedRoute";
-// import { useState, useEffect } from "react";
-// import { apiClient } from "../../lib/api";
-
-// interface Article {
-//   _id: string;
-//   title: string;
-//   content: string;
-//   excerpt?: string;
-//   tags: string[];
-//   published: boolean;
-//   createdAt: string;
-// }
-
-// export default function ArticlesPage() {
-//   const [articles, setArticles] = useState<Article[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState("");
-//   const [showModal, setShowModal] = useState(false);
-//   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [filterStatus, setFilterStatus] = useState("all");
-//   const [formData, setFormData] = useState({
-//     title: "",
-//     content: "",
-//     excerpt: "",
-//     tags: "",
-//     published: false,
-//   });
-
-//   useEffect(() => {
-//     fetchArticles();
-//   }, []);
-
-//   const fetchArticles = async () => {
-//     try {
-//       setLoading(true);
-//       const data = await apiClient.get("/articles");
-//       setArticles(data);
-//     } catch (err: any) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleCreate = async () => {
-//     try {
-//       const articleData = {
-//         title: formData.title,
-//         content: formData.content,
-//         excerpt: formData.excerpt,
-//         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-//         published: formData.published,
-//       };
-
-//       await apiClient.post("/articles", articleData);
-//       setShowModal(false);
-//       resetForm();
-//       fetchArticles();
-//     } catch (err: any) {
-//       alert(err.message);
-//     }
-//   };
-
-//   const handleUpdate = async () => {
-//     if (!editingArticle) return;
-
-//     try {
-//       const articleData = {
-//         title: formData.title,
-//         content: formData.content,
-//         excerpt: formData.excerpt,
-//         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-//         published: formData.published,
-//       };
-
-//       await apiClient.put(`/articles/${editingArticle._id}`, articleData);
-//       setShowModal(false);
-//       setEditingArticle(null);
-//       resetForm();
-//       fetchArticles();
-//     } catch (err: any) {
-//       alert(err.message);
-//     }
-//   };
-
-//   const handleDelete = async (id: string) => {
-//     if (!confirm("Are you sure you want to delete this article?")) return;
-
-//     try {
-//       await apiClient.delete(`/articles/${id}`);
-//       fetchArticles();
-//     } catch (err: any) {
-//       alert(err.message);
-//     }
-//   };
-
-//   const openEditModal = (article: Article) => {
-//     setEditingArticle(article);
-//     setFormData({
-//       title: article.title,
-//       content: article.content,
-//       excerpt: article.excerpt || "",
-//       tags: article.tags.join(", "),
-//       published: article.published,
-//     });
-//     setShowModal(true);
-//   };
-
-//   const resetForm = () => {
-//     setFormData({
-//       title: "",
-//       content: "",
-//       excerpt: "",
-//       tags: "",
-//       published: false,
-//     });
-//     setEditingArticle(null);
-//   };
-
-//   const filteredArticles = articles.filter(article => {
-//     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                          article.content.toLowerCase().includes(searchTerm.toLowerCase());
-//     const matchesStatus = filterStatus === "all" ||
-//                          (filterStatus === "published" && article.published) ||
-//                          (filterStatus === "draft" && !article.published);
-//     return matchesSearch && matchesStatus;
-//   });
-
-//   const formatDate = (dateString: string) => {
-//     return new Date(dateString).toLocaleDateString();
-//   };
-
-//   return (
-//     <ProtectedRoute>
-//       <section>
-//         <div className="flex justify-between items-center mb-6">
-//           <h2 className="text-3xl font-bold text-gold">Articles</h2>
-//           <button
-//             onClick={() => {
-//               resetForm();
-//               setShowModal(true);
-//             }}
-//             className="bg-gold text-black px-6 py-2 rounded font-semibold hover:bg-[#b8941e] transition-colors"
-//           >
-//             + New Article
-//           </button>
-//         </div>
-
-//         <div className="mb-6 flex gap-4">
-//           <input
-//             type="text"
-//             placeholder="Search articles..."
-//             value={searchTerm}
-//             onChange={(e) => setSearchTerm(e.target.value)}
-//             className="flex-1 px-4 py-2 bg-black border-2 border-gold rounded text-white placeholder-silver"
-//           />
-//           <select
-//             value={filterStatus}
-//             onChange={(e) => setFilterStatus(e.target.value)}
-//             className="px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//           >
-//             <option value="all">All Status</option>
-//             <option value="published">Published</option>
-//             <option value="draft">Draft</option>
-//           </select>
-//         </div>
-
-//         {loading && <p className="text-silver">Loading articles...</p>}
-//         {error && <p className="text-red-500">{error}</p>}
-
-//         <div className="space-y-4">
-//           {filteredArticles.map((article) => (
-//             <ArticleCard
-//               key={article._id}
-//               article={article}
-//               onEdit={() => openEditModal(article)}
-//               onDelete={() => handleDelete(article._id)}
-//               formatDate={formatDate}
-//             />
-//           ))}
-//         </div>
-
-//         {!loading && filteredArticles.length === 0 && (
-//           <p className="text-center text-silver py-8">
-//             {searchTerm || filterStatus !== "all" 
-//               ? "No articles match your filters."
-//               : "No articles yet. Create your first one!"}
-//           </p>
-//         )}
-
-//         {showModal && (
-//           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-//             <div className="bg-black border-2 border-gold p-8 rounded max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-//               <h3 className="text-2xl font-bold text-gold mb-6">
-//                 {editingArticle ? "Edit Article" : "Create New Article"}
-//               </h3>
-
-//               <div className="space-y-4">
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Title *</label>
-//                   <input
-//                     type="text"
-//                     value={formData.title}
-//                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-//                     className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                     placeholder="Enter article title"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Excerpt</label>
-//                   <input
-//                     type="text"
-//                     value={formData.excerpt}
-//                     onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-//                     className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                     placeholder="Brief summary (optional)"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Content *</label>
-//                   <textarea
-//                     value={formData.content}
-//                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-//                     rows={10}
-//                     className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                     placeholder="Write your article content here..."
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Tags</label>
-//                   <input
-//                     type="text"
-//                     value={formData.tags}
-//                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-//                     className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                     placeholder="React, TypeScript, Web Development (comma-separated)"
-//                   />
-//                 </div>
-
-//                 <div className="flex items-center gap-3">
-//                   <input
-//                     type="checkbox"
-//                     id="published"
-//                     checked={formData.published}
-//                     onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-//                     className="w-5 h-5"
-//                   />
-//                   <label htmlFor="published" className="text-white font-semibold">
-//                     Publish immediately
-//                   </label>
-//                 </div>
-//               </div>
-
-//               <div className="flex gap-4 mt-6">
-//                 <button
-//                   onClick={editingArticle ? handleUpdate : handleCreate}
-//                   className="flex-1 bg-gold text-black px-6 py-3 rounded font-semibold hover:bg-[#b8941e] transition-colors"
-//                 >
-//                   {editingArticle ? "Update Article" : "Create Article"}
-//                 </button>
-//                 <button
-//                   onClick={() => {
-//                     setShowModal(false);
-//                     setEditingArticle(null);
-//                     resetForm();
-//                   }}
-//                   className="flex-1 bg-black border-2 border-gold text-gold px-6 py-3 rounded font-semibold hover:bg-gold hover:text-black transition-colors"
-//                 >
-//                   Cancel
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </section>
-//     </ProtectedRoute>
-//   );
-// }
-
-// function ArticleCard({
-//   article,
-//   onEdit,
-//   onDelete,
-//   formatDate,
-// }: {
-//   article: Article;
-//   onEdit: () => void;
-//   onDelete: () => void;
-//   formatDate: (date: string) => string;
-// }) {
-//   return (
-//     <div className="bg-black border-2 border-gold p-6 rounded">
-//       <div className="flex justify-between items-start mb-3">
-//         <div className="flex-1">
-//           <h3 className="text-xl font-semibold text-white mb-2">{article.title}</h3>
-//           <div className="flex gap-4 text-sm text-silver mb-2">
-//             {article.tags.map(tag => (
-//               <span key={tag} className="bg-gold text-black px-2 py-1 rounded text-xs font-semibold">
-//                 {tag}
-//               </span>
-//             ))}
-//             <span
-//               className={`px-2 py-1 rounded text-xs font-semibold ${
-//                 article.published
-//                   ? "bg-green-600 text-white"
-//                   : "bg-gray-600 text-white"
-//               }`}
-//             >
-//               {article.published ? "Published" : "Draft"}
-//             </span>
-//           </div>
-//           {article.excerpt && (
-//             <p className="text-silver text-sm mb-2">{article.excerpt}</p>
-//           )}
-//         </div>
-//         <div className="flex gap-2">
-//           <button
-//             onClick={onEdit}
-//             className="px-4 py-2 bg-gold text-black rounded hover:bg-[#b8941e] transition-colors text-sm font-semibold"
-//           >
-//             Edit
-//           </button>
-//           <button
-//             onClick={onDelete}
-//             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-semibold"
-//           >
-//             Delete
-//           </button>
-//         </div>
-//       </div>
-//       <div className="flex gap-6 text-sm text-silver">
-//         <span>📅 {formatDate(article.createdAt)}</span>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-// =================
-// Version 2
-// =================
-// "use client";
-
-// import ProtectedRoute from "../../components/ProtectedRoute";
-// import { useState, useEffect } from "react";
-// import { apiClient } from "../../lib/api";
-// import RichTextEditor from "../../components/RichTextEditor";
-
-// interface Article {
-//   _id: string;
-//   title: string;
-//   content: string;
-//   excerpt?: string;
-//   tags: string[];
-//   published: boolean;
-//   createdAt: string;
-// }
-
-// export default function ArticlesPage() {
-//   const [articles, setArticles] = useState<Article[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState("");
-//   const [showModal, setShowModal] = useState(false);
-//   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [filterStatus, setFilterStatus] = useState("all");
-//   const [formData, setFormData] = useState({
-//     title: "",
-//     content: "",
-//     excerpt: "",
-//     tags: "",
-//     published: false,
-//   });
-
-//   useEffect(() => {
-//     fetchArticles();
-//   }, []);
-
-//   const fetchArticles = async () => {
-//     try {
-//       setLoading(true);
-//       const data = await apiClient.get("/articles");
-//       setArticles(data);
-//     } catch (err: any) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleCreate = async () => {
-//     try {
-//       const articleData = {
-//         title: formData.title,
-//         content: formData.content,
-//         excerpt: formData.excerpt,
-//         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-//         published: formData.published,
-//       };
-
-//       await apiClient.post("/articles", articleData);
-//       setShowModal(false);
-//       resetForm();
-//       fetchArticles();
-//     } catch (err: any) {
-//       alert(err.message);
-//     }
-//   };
-
-//   const handleUpdate = async () => {
-//     if (!editingArticle) return;
-
-//     try {
-//       const articleData = {
-//         title: formData.title,
-//         content: formData.content,
-//         excerpt: formData.excerpt,
-//         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-//         published: formData.published,
-//       };
-
-//       await apiClient.put(`/articles/${editingArticle._id}`, articleData);
-//       setShowModal(false);
-//       setEditingArticle(null);
-//       resetForm();
-//       fetchArticles();
-//     } catch (err: any) {
-//       alert(err.message);
-//     }
-//   };
-
-//   const handleDelete = async (id: string) => {
-//     if (!confirm("Are you sure you want to delete this article?")) return;
-
-//     try {
-//       await apiClient.delete(`/articles/${id}`);
-//       fetchArticles();
-//     } catch (err: any) {
-//       alert(err.message);
-//     }
-//   };
-
-//   const openEditModal = (article: Article) => {
-//     setEditingArticle(article);
-//     setFormData({
-//       title: article.title,
-//       content: article.content,
-//       excerpt: article.excerpt || "",
-//       tags: article.tags.join(", "),
-//       published: article.published,
-//     });
-//     setShowModal(true);
-//   };
-
-//   const resetForm = () => {
-//     setFormData({
-//       title: "",
-//       content: "",
-//       excerpt: "",
-//       tags: "",
-//       published: false,
-//     });
-//     setEditingArticle(null);
-//   };
-
-//   const filteredArticles = articles.filter(article => {
-//     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                          article.content.toLowerCase().includes(searchTerm.toLowerCase());
-//     const matchesStatus = filterStatus === "all" ||
-//                          (filterStatus === "published" && article.published) ||
-//                          (filterStatus === "draft" && !article.published);
-//     return matchesSearch && matchesStatus;
-//   });
-
-//   const formatDate = (dateString: string) => {
-//     return new Date(dateString).toLocaleDateString();
-//   };
-
-//   // Strip HTML tags for preview
-//   const stripHtml = (html: string) => {
-//     const tmp = document.createElement("div");
-//     tmp.innerHTML = html;
-//     return tmp.textContent || tmp.innerText || "";
-//   };
-
-//   return (
-//     <ProtectedRoute>
-//       <section>
-//         <div className="flex justify-between items-center mb-6">
-//           <h2 className="text-3xl font-bold text-gold">Articles</h2>
-//           <button
-//             onClick={() => {
-//               resetForm();
-//               setShowModal(true);
-//             }}
-//             className="bg-gold text-black px-6 py-2 rounded font-semibold hover:bg-[#b8941e] transition-colors"
-//           >
-//             + New Article
-//           </button>
-//         </div>
-
-//         <div className="mb-6 flex gap-4">
-//           <input
-//             type="text"
-//             placeholder="Search articles..."
-//             value={searchTerm}
-//             onChange={(e) => setSearchTerm(e.target.value)}
-//             className="flex-1 px-4 py-2 bg-black border-2 border-gold rounded text-white placeholder-silver"
-//           />
-//           <select
-//             value={filterStatus}
-//             onChange={(e) => setFilterStatus(e.target.value)}
-//             className="px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//           >
-//             <option value="all">All Status</option>
-//             <option value="published">Published</option>
-//             <option value="draft">Draft</option>
-//           </select>
-//         </div>
-
-//         {loading && <p className="text-silver">Loading articles...</p>}
-//         {error && <p className="text-red-500">{error}</p>}
-
-//         <div className="space-y-4">
-//           {filteredArticles.map((article) => (
-//             <ArticleCard
-//               key={article._id}
-//               article={article}
-//               onEdit={() => openEditModal(article)}
-//               onDelete={() => handleDelete(article._id)}
-//               formatDate={formatDate}
-//               stripHtml={stripHtml}
-//             />
-//           ))}
-//         </div>
-
-//         {!loading && filteredArticles.length === 0 && (
-//           <p className="text-center text-silver py-8">
-//             {searchTerm || filterStatus !== "all" 
-//               ? "No articles match your filters."
-//               : "No articles yet. Create your first one!"}
-//           </p>
-//         )}
-
-//         {showModal && (
-//           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 overflow-y-auto">
-//             <div className="bg-black border-2 border-gold p-8 rounded max-w-4xl w-full my-8">
-//               <h3 className="text-2xl font-bold text-gold mb-6">
-//                 {editingArticle ? "Edit Article" : "Create New Article"}
-//               </h3>
-
-//               <div className="space-y-4">
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Title *</label>
-//                   <input
-//                     type="text"
-//                     value={formData.title}
-//                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-//                     className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                     placeholder="Enter article title"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Excerpt</label>
-//                   <input
-//                     type="text"
-//                     value={formData.excerpt}
-//                     onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-//                     className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                     placeholder="Brief summary (optional)"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Content *</label>
-//                   <RichTextEditor
-//                     value={formData.content}
-//                     onChange={(content) => setFormData({ ...formData, content })}
-//                     placeholder="Write your article content here..."
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-silver mb-2 font-semibold">Tags</label>
-//                   <input
-//                     type="text"
-//                     value={formData.tags}
-//                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-//                     className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                     placeholder="React, TypeScript, Web Development (comma-separated)"
-//                   />
-//                 </div>
-
-//                 <div className="flex items-center gap-3">
-//                   <input
-//                     type="checkbox"
-//                     id="published"
-//                     checked={formData.published}
-//                     onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-//                     className="w-5 h-5"
-//                   />
-//                   <label htmlFor="published" className="text-white font-semibold">
-//                     Publish immediately
-//                   </label>
-//                 </div>
-//               </div>
-
-//               <div className="flex gap-4 mt-6">
-//                 <button
-//                   onClick={editingArticle ? handleUpdate : handleCreate}
-//                   className="flex-1 bg-gold text-black px-6 py-3 rounded font-semibold hover:bg-[#b8941e] transition-colors"
-//                 >
-//                   {editingArticle ? "Update Article" : "Create Article"}
-//                 </button>
-//                 <button
-//                   onClick={() => {
-//                     setShowModal(false);
-//                     setEditingArticle(null);
-//                     resetForm();
-//                   }}
-//                   className="flex-1 bg-black border-2 border-gold text-gold px-6 py-3 rounded font-semibold hover:bg-gold hover:text-black transition-colors"
-//                 >
-//                   Cancel
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </section>
-//     </ProtectedRoute>
-//   );
-// }
-
-// function ArticleCard({
-//   article,
-//   onEdit,
-//   onDelete,
-//   formatDate,
-//   stripHtml,
-// }: {
-//   article: Article;
-//   onEdit: () => void;
-//   onDelete: () => void;
-//   formatDate: (date: string) => string;
-//   stripHtml: (html: string) => string;
-// }) {
-//   const contentPreview = stripHtml(article.content).slice(0, 150) + "...";
-
-//   return (
-//     <div className="bg-black border-2 border-gold p-6 rounded">
-//       <div className="flex justify-between items-start mb-3">
-//         <div className="flex-1">
-//           <h3 className="text-xl font-semibold text-white mb-2">{article.title}</h3>
-//           <div className="flex gap-4 text-sm text-silver mb-2">
-//             {article.tags.map(tag => (
-//               <span key={tag} className="bg-gold text-black px-2 py-1 rounded text-xs font-semibold">
-//                 {tag}
-//               </span>
-//             ))}
-//             <span
-//               className={`px-2 py-1 rounded text-xs font-semibold ${
-//                 article.published
-//                   ? "bg-green-600 text-white"
-//                   : "bg-gray-600 text-white"
-//               }`}
-//             >
-//               {article.published ? "Published" : "Draft"}
-//             </span>
-//           </div>
-//           {article.excerpt ? (
-//             <p className="text-silver text-sm mb-2">{article.excerpt}</p>
-//           ) : (
-//             <p className="text-silver text-sm mb-2 italic">{contentPreview}</p>
-//           )}
-//         </div>
-//         <div className="flex gap-2">
-//           <button
-//             onClick={onEdit}
-//             className="px-4 py-2 bg-gold text-black rounded hover:bg-[#b8941e] transition-colors text-sm font-semibold"
-//           >
-//             Edit
-//           </button>
-//           <button
-//             onClick={onDelete}
-//             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-semibold"
-//           >
-//             Delete
-//           </button>
-//         </div>
-//       </div>
-//       <div className="flex gap-6 text-sm text-silver">
-//         <span>📅 {formatDate(article.createdAt)}</span>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-// "use client";
-
-// import ProtectedRoute from "../../components/ProtectedRoute";
-// import { useState, useEffect } from "react";
-// import { apiClient } from "../../lib/api";
-// import RichTextEditor from "../../components/RichTextEditor";
-
-// interface Article {
-//   _id: string;
-//   title: string;
-//   content: string;
-//   excerpt?: string;
-//   tags: string[];
-//   published: boolean;
-//   createdAt: string;
-// }
-
-// export default function ArticlesPage() {
-//   const [articles, setArticles] = useState<Article[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState("");
-//   const [showModal, setShowModal] = useState(false);
-//   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [filterStatus, setFilterStatus] = useState("all");
-//   const [formData, setFormData] = useState({
-//     title: "",
-//     content: "",
-//     excerpt: "",
-//     tags: "",
-//     published: false,
-//   });
-//   const [markdownPreview, setMarkdownPreview] = useState("");
-
-//   useEffect(() => { fetchArticles(); }, []);
-
-//   const fetchArticles = async () => {
-//     try {
-//       setLoading(true);
-//       const data = await apiClient.get("/articles");
-//       setArticles(data);
-//     } catch (err: any) { setError(err.message); } 
-//     finally { setLoading(false); }
-//   };
-
-//   const handleCreate = async () => {
-//     try {
-//       const articleData = {
-//         title: formData.title,
-//         content: formData.content,
-//         excerpt: formData.excerpt,
-//         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-//         published: formData.published,
-//       };
-//       await apiClient.post("/articles", articleData);
-//       setShowModal(false);
-//       resetForm();
-//       fetchArticles();
-//     } catch (err: any) { alert(err.message); }
-//   };
-
-//   const handleUpdate = async () => {
-//     if (!editingArticle) return;
-//     try {
-//       const articleData = {
-//         title: formData.title,
-//         content: formData.content,
-//         excerpt: formData.excerpt,
-//         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-//         published: formData.published,
-//       };
-//       await apiClient.put(`/articles/${editingArticle._id}`, articleData);
-//       setShowModal(false);
-//       setEditingArticle(null);
-//       resetForm();
-//       fetchArticles();
-//     } catch (err: any) { alert(err.message); }
-//   };
-
-//   const handleDelete = async (id: string) => {
-//     if (!confirm("Are you sure you want to delete this article?")) return;
-//     try { await apiClient.delete(`/articles/${id}`); fetchArticles(); } 
-//     catch (err: any) { alert(err.message); }
-//   };
-
-//   const openEditModal = (article: Article) => {
-//     setEditingArticle(article);
-//     setFormData({
-//       title: article.title,
-//       content: article.content,
-//       excerpt: article.excerpt || "",
-//       tags: article.tags.join(", "),
-//       published: article.published,
-//     });
-//     setMarkdownPreview("");
-//     setShowModal(true);
-//   };
-
-//   const resetForm = () => {
-//     setFormData({ title: "", content: "", excerpt: "", tags: "", published: false });
-//     setEditingArticle(null);
-//     setMarkdownPreview("");
-//   };
-
-//   const filteredArticles = articles.filter(article => {
-//     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       article.content.toLowerCase().includes(searchTerm.toLowerCase());
-//     const matchesStatus = filterStatus === "all" ||
-//       (filterStatus === "published" && article.published) ||
-//       (filterStatus === "draft" && !article.published);
-//     return matchesSearch && matchesStatus;
-//   });
-
-//   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
-//   const stripHtml = (html: string) => {
-//     const tmp = document.createElement("div");
-//     tmp.innerHTML = html;
-//     return tmp.textContent || tmp.innerText || "";
-//   };
-
-//   return (
-//     <ProtectedRoute>
-//       <section>
-//         <div className="flex justify-between items-center mb-6">
-//           <h2 className="text-3xl font-bold text-gold">Articles</h2>
-//           <button
-//             onClick={() => { resetForm(); setShowModal(true); }}
-//             className="bg-gold text-black px-6 py-2 rounded font-semibold hover:bg-[#b8941e] transition-colors"
-//           >+ New Article</button>
-//         </div>
-
-//         <div className="mb-6 flex gap-4">
-//           <input
-//             type="text"
-//             placeholder="Search articles..."
-//             value={searchTerm}
-//             onChange={(e) => setSearchTerm(e.target.value)}
-//             className="flex-1 px-4 py-2 bg-black border-2 border-gold rounded text-white placeholder-silver"
-//           />
-//           <select
-//             value={filterStatus}
-//             onChange={(e) => setFilterStatus(e.target.value)}
-//             className="px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//           >
-//             <option value="all">All Status</option>
-//             <option value="published">Published</option>
-//             <option value="draft">Draft</option>
-//           </select>
-//         </div>
-
-//         {loading && <p className="text-silver">Loading articles...</p>}
-//         {error && <p className="text-red-500">{error}</p>}
-
-//         <div className="space-y-4">
-//           {filteredArticles.map(article => (
-//             <ArticleCard
-//               key={article._id}
-//               article={article}
-//               onEdit={() => openEditModal(article)}
-//               onDelete={() => handleDelete(article._id)}
-//               formatDate={formatDate}
-//               stripHtml={stripHtml}
-//             />
-//           ))}
-//         </div>
-
-//         {!loading && filteredArticles.length === 0 && (
-//           <p className="text-center text-silver py-8">
-//             {searchTerm || filterStatus !== "all" ? "No articles match your filters." : "No articles yet. Create your first one!"}
-//           </p>
-//         )}
-
-//         {showModal && (
-//           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-start justify-center z-50 p-4 overflow-y-auto">
-//             <div className="bg-black border-2 border-gold p-8 rounded max-w-5xl w-full my-8 flex flex-col gap-4">
-//               <h3 className="text-2xl font-bold text-gold mb-6">
-//                 {editingArticle ? "Edit Article" : "Create New Article"}
-//               </h3>
-
-//               <div className="flex flex-col gap-4">
-//                 <input
-//                   type="text"
-//                   value={formData.title}
-//                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-//                   placeholder="Title *"
-//                   className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                 />
-//                 <input
-//                   type="text"
-//                   value={formData.excerpt}
-//                   onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-//                   placeholder="Excerpt"
-//                   className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                 />
-//                 <div className="flex flex-col lg:flex-row gap-4">
-//                   <RichTextEditor
-//                     value={formData.content}
-//                     onChange={(content) => setFormData({ ...formData, content })}
-//                     onMarkdownChange={(md) => setMarkdownPreview(md)}
-//                     placeholder="Write your article content here..."
-//                   />
-//                   <div className="flex-1 p-4 border-2 border-gold rounded bg-black text-white overflow-auto min-w-[300px] max-h-[500px]">
-//                     <h4 className="font-semibold text-gold mb-2">Markdown Preview</h4>
-//                     <pre className="whitespace-pre-wrap">{markdownPreview}</pre>
-//                   </div>
-//                 </div>
-//                 <input
-//                   type="text"
-//                   value={formData.tags}
-//                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-//                   placeholder="Tags (comma separated)"
-//                   className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-//                 />
-//                 <label className="flex items-center gap-2">
-//                   <input
-//                     type="checkbox"
-//                     checked={formData.published}
-//                     onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-//                   />
-//                   <span className="text-white">Publish</span>
-//                 </label>
-
-//                 <div className="flex gap-4 mt-4 justify-end">
-//                   <button
-//                     onClick={() => { setShowModal(false); resetForm(); }}
-//                     className="px-6 py-2 border-2 border-gold text-gold rounded hover:bg-gold hover:text-black transition-colors"
-//                   >
-//                     Cancel
-//                   </button>
-//                   <button
-//                     onClick={editingArticle ? handleUpdate : handleCreate}
-//                     className="px-6 py-2 bg-gold text-black rounded font-semibold hover:bg-[#b8941e] transition-colors"
-//                   >
-//                     {editingArticle ? "Update" : "Create"}
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </section>
-//     </ProtectedRoute>
-//   );
-// }
-
-// function ArticleCard({
-//   article,
-//   onEdit,
-//   onDelete,
-//   formatDate,
-//   stripHtml,
-// }: {
-//   article: Article;
-//   onEdit: () => void;
-//   onDelete: () => void;
-//   formatDate: (date: string) => string;
-//   stripHtml: (html: string) => string;
-// }) {
-//   return (
-//     <div className="border-2 border-gold rounded p-4 flex flex-col lg:flex-row justify-between gap-4">
-//       <div>
-//         <h4 className="text-xl font-bold text-gold">{article.title}</h4>
-//         <p className="text-silver">{stripHtml(article.content).slice(0, 150)}{stripHtml(article.content).length > 150 ? "..." : ""}</p>
-//         <div className="flex gap-2 mt-2 flex-wrap">
-//           {article.tags.map(tag => (
-//             <span key={tag} className="bg-gold text-black px-2 py-1 rounded text-xs">{tag}</span>
-//           ))}
-//         </div>
-//         <p className="text-silver text-xs mt-2">
-//           {article.published ? "Published" : "Draft"} | {formatDate(article.createdAt)}
-//         </p>
-//       </div>
-//       <div className="flex gap-2 items-start">
-//         <button onClick={onEdit} className="px-4 py-2 border-2 border-gold text-gold rounded hover:bg-gold hover:text-black transition-colors">Edit</button>
-//         <button onClick={onDelete} className="px-4 py-2 border-2 border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-black transition-colors">Delete</button>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
 "use client";
 
+import { useEffect, useState } from "react";
 import ProtectedRoute from "../../components/ProtectedRoute";
-import { useState, useEffect } from "react";
 import { apiClient } from "../../lib/api";
 import QuillEditor from "../../components/ProTextEditor";
 
@@ -1006,237 +15,266 @@ interface Article {
   createdAt: string;
 }
 
+/* ---------- SSR-SAFE HTML STRIP ---------- */
+const stripHtml = (html: string) => {
+  if (!html) return "";
+  return html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+};
+
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [showModal, setShowModal] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+
   const [formData, setFormData] = useState({
     title: "",
-    content: "",
     excerpt: "",
+    content: "",
     tags: "",
     published: false,
   });
 
-  useEffect(() => { fetchArticles(); }, []);
+  useEffect(() => {
+    fetchArticles();
+  }, []);
 
   const fetchArticles = async () => {
     try {
       setLoading(true);
       const data = await apiClient.get("/articles");
       setArticles(data);
-    } catch (err: any) { setError(err.message); } 
-    finally { setLoading(false); }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreate = async () => {
-    try {
-      const articleData = {
-        title: formData.title,
-        content: formData.content,
-        excerpt: formData.excerpt,
-        tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-        published: formData.published,
-      };
-      await apiClient.post("/articles", articleData);
-      setShowModal(false);
-      resetForm();
-      fetchArticles();
-    } catch (err: any) { alert(err.message); }
-  };
-
-  const handleUpdate = async () => {
-    if (!editingArticle) return;
-    try {
-      const articleData = {
-        title: formData.title,
-        content: formData.content,
-        excerpt: formData.excerpt,
-        tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
-        published: formData.published,
-      };
-      await apiClient.put(`/articles/${editingArticle._id}`, articleData);
-      setShowModal(false);
-      setEditingArticle(null);
-      resetForm();
-      fetchArticles();
-    } catch (err: any) { alert(err.message); }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this article?")) return;
-    try { await apiClient.delete(`/articles/${id}`); fetchArticles(); } 
-    catch (err: any) { alert(err.message); }
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      excerpt: "",
+      content: "",
+      tags: "",
+      published: false,
+    });
+    setEditingArticle(null);
   };
 
   const openEditModal = (article: Article) => {
     setEditingArticle(article);
     setFormData({
       title: article.title,
-      content: article.content,
       excerpt: article.excerpt || "",
+      content: article.content,
       tags: article.tags.join(", "),
       published: article.published,
     });
     setShowModal(true);
   };
 
-  const resetForm = () => {
-    setFormData({ title: "", content: "", excerpt: "", tags: "", published: false });
-    setEditingArticle(null);
+  const saveArticle = async () => {
+    const payload = {
+      title: formData.title,
+      excerpt: formData.excerpt,
+      content: formData.content,
+      tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean),
+      published: formData.published,
+    };
+
+    try {
+      if (editingArticle) {
+        await apiClient.put(`/articles/${editingArticle._id}`, payload);
+      } else {
+        await apiClient.post("/articles", payload);
+      }
+
+      setShowModal(false);
+      resetForm();
+      fetchArticles();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
-  const filteredArticles = articles.filter(article => {
-    const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" ||
-      (filterStatus === "published" && article.published) ||
-      (filterStatus === "draft" && !article.published);
+  const deleteArticle = async (id: string) => {
+    if (!confirm("Delete this article?")) return;
+    await apiClient.delete(`/articles/${id}`);
+    fetchArticles();
+  };
+
+  const filtered = articles.filter(a => {
+    const text = `${a.title} ${stripHtml(a.content)}`.toLowerCase();
+    const matchesSearch = text.includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "published" && a.published) ||
+      (filterStatus === "draft" && !a.published);
     return matchesSearch && matchesStatus;
   });
 
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
-  
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
   return (
     <ProtectedRoute>
-      <section>
+      <div className="h-screen overflow-y-auto p-6">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gold">Articles</h2>
+          <h2 className="text-3xl text-gold font-bold">Articles</h2>
           <button
-            onClick={() => { resetForm(); setShowModal(true); }}
-            className="bg-gold text-black px-6 py-2 rounded font-semibold hover:bg-[#b8941e] transition-colors"
-          >+ New Article</button>
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-gold text-black px-6 py-2 rounded"
+          >
+            + New Article
+          </button>
         </div>
 
-        <div className="mb-6 flex gap-4">
+        {/* Filters */}
+        <div className="flex gap-4 mb-6">
           <input
-            type="text"
-            placeholder="Search articles..."
+            className="flex-1 px-4 py-2 bg-black border border-gold text-white"
+            placeholder="Search articles…"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-2 bg-black border-2 border-gold rounded text-white placeholder-silver"
+            onChange={e => setSearchTerm(e.target.value)}
           />
           <select
+            className="px-4 py-2 bg-black border border-gold text-white"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 bg-black border-2 border-gold rounded text-white"
+            onChange={e => setFilterStatus(e.target.value)}
           >
-            <option value="all">All Status</option>
+            <option value="all">All</option>
             <option value="published">Published</option>
             <option value="draft">Draft</option>
           </select>
         </div>
 
-        {loading && <p className="text-silver">Loading articles...</p>}
+        {/* List */}
+        {loading && <p className="text-silver">Loading…</p>}
         {error && <p className="text-red-500">{error}</p>}
 
         <div className="space-y-4">
-          {filteredArticles.map(article => (
-            <ArticleCard
-              key={article._id}
-              article={article}
-              onEdit={() => openEditModal(article)}
-              onDelete={() => handleDelete(article._id)}
-              formatDate={formatDate}
-              stripHtml={stripHtml}
-            />
+          {filtered.map(a => (
+            <div key={a._id} className="border border-gold p-5 rounded bg-black">
+              <div className="flex justify-between">
+                <h3 className="text-white text-xl">{a.title}</h3>
+                <div className="flex gap-3">
+                  <button onClick={() => openEditModal(a)} className="text-gold">
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteArticle(a._id)}
+                    className="text-red-500"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-silver text-sm mt-2">
+                {a.excerpt || stripHtml(a.content).slice(0, 150) + "..."}
+              </p>
+
+              <div className="flex gap-2 mt-3">
+                {a.tags.map(t => (
+                  <span
+                    key={t}
+                    className="bg-gold text-black px-2 py-1 rounded text-xs"
+                  >
+                    {t}
+                  </span>
+                ))}
+                <span
+                  className={`px-2 py-1 text-xs rounded ${
+                    a.published ? "bg-green-600" : "bg-gray-600"
+                  }`}
+                >
+                  {a.published ? "Published" : "Draft"}
+                </span>
+              </div>
+            </div>
           ))}
         </div>
 
-        {!loading && filteredArticles.length === 0 && (
-          <p className="text-center text-silver py-8">
-            {searchTerm || filterStatus !== "all" ? "No articles match your filters." : "No articles yet. Create your first one!"}
-          </p>
-        )}
-
+        {/* Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-start justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-black border-2 border-gold p-8 rounded max-w-5xl w-full my-8">
-              <h3 className="text-2xl font-bold text-gold mb-6">
-                {editingArticle ? "Edit Article" : "Create New Article"}
+          <div className="fixed inset-0 bg-black/80 flex justify-center items-start p-6 z-50 overflow-y-auto">
+            <div className="bg-black border-2 border-gold p-8 rounded w-full max-w-5xl">
+              <h3 className="text-gold text-2xl mb-6">
+                {editingArticle ? "Edit Article" : "New Article"}
               </h3>
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-silver mb-2 font-semibold">Title *</label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-                    placeholder="Enter article title"
-                  />
-                </div>
+                <input
+                  className="w-full px-4 py-2 border border-gold bg-black text-white"
+                  placeholder="Title"
+                  value={formData.title}
+                  onChange={e =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                />
 
-                <div>
-                  <label className="block text-silver mb-2 font-semibold">Excerpt</label>
-                  <input
-                    type="text"
-                    value={formData.excerpt}
-                    onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-                    className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-                    placeholder="Brief summary (optional)"
-                  />
-                </div>
+                <input
+                  className="w-full px-4 py-2 border border-gold bg-black text-white"
+                  placeholder="Excerpt (optional)"
+                  value={formData.excerpt}
+                  onChange={e =>
+                    setFormData({ ...formData, excerpt: e.target.value })
+                  }
+                />
 
-                <div>
-                  <label className="block text-silver mb-2 font-semibold">Content *</label>
-                  <QuillEditor
-                    value={formData.content}
-                    onChange={(content) => setFormData({ ...formData, content })}
-                    placeholder="Write your article content here..."
-                  />
-                </div>
+                <QuillEditor
+                  value={formData.content}
+                  onChange={c => setFormData({ ...formData, content: c })}
+                />
 
-                <div>
-                  <label className="block text-silver mb-2 font-semibold">Tags</label>
-                  <input
-                    type="text"
-                    value={formData.tags}
-                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    className="w-full px-4 py-2 bg-black border-2 border-gold rounded text-white"
-                    placeholder="React, TypeScript, Web Development (comma-separated)"
-                  />
-                </div>
+                <input
+                  className="w-full px-4 py-2 border border-gold bg-black text-white"
+                  placeholder="Tags: React, SaaS"
+                  value={formData.tags}
+                  onChange={e =>
+                    setFormData({ ...formData, tags: e.target.value })
+                  }
+                />
 
-                <div className="flex items-center gap-3">
+                <label className="flex gap-3 text-white items-center">
                   <input
                     type="checkbox"
-                    id="published"
                     checked={formData.published}
-                    onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-                    className="w-5 h-5"
+                    onChange={e =>
+                      setFormData({ ...formData, published: e.target.checked })
+                    }
                   />
-                  <label htmlFor="published" className="text-white font-semibold">
-                    Publish immediately
-                  </label>
-                </div>
+                  Publish immediately
+                </label>
               </div>
 
               <div className="flex gap-4 mt-6">
                 <button
-                  onClick={editingArticle ? handleUpdate : handleCreate}
-                  className="flex-1 bg-gold text-black px-6 py-3 rounded font-semibold hover:bg-[#b8941e] transition-colors"
+                  onClick={saveArticle}
+                  className="flex-1 bg-gold text-black p-3"
                 >
-                  {editingArticle ? "Update Article" : "Create Article"}
+                  {editingArticle ? "Update" : "Create"}
                 </button>
                 <button
                   onClick={() => {
                     setShowModal(false);
-                    setEditingArticle(null);
                     resetForm();
                   }}
-                  className="flex-1 bg-black border-2 border-gold text-gold px-6 py-3 rounded font-semibold hover:bg-gold hover:text-black transition-colors"
+                  className="flex-1 border border-gold text-gold p-3"
                 >
                   Cancel
                 </button>
@@ -1244,70 +282,7 @@ export default function ArticlesPage() {
             </div>
           </div>
         )}
-      </section>
+      </div>
     </ProtectedRoute>
-  );
-}
-
-function ArticleCard({
-  article,
-  onEdit,
-  onDelete,
-  formatDate,
-  stripHtml,
-}: {
-  article: Article;
-  onEdit: () => void;
-  onDelete: () => void;
-  formatDate: (date: string) => string;
-  stripHtml: (html: string) => string;
-}) {
-  return (
-    <div className="bg-black border-2 border-gold p-6 rounded">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold text-white mb-2">{article.title}</h3>
-          <div className="flex gap-2 flex-wrap mb-2">
-            {article.tags.map(tag => (
-              <span key={tag} className="bg-gold text-black px-2 py-1 rounded text-xs font-semibold">
-                {tag}
-              </span>
-            ))}
-            <span
-              className={`px-2 py-1 rounded text-xs font-semibold ${
-                article.published ? "bg-green-600 text-white" : "bg-gray-600 text-white"
-              }`}
-            >
-              {article.published ? "Published" : "Draft"}
-            </span>
-          </div>
-          {article.excerpt ? (
-            <p className="text-silver text-sm mb-2">{article.excerpt}</p>
-          ) : (
-            <p className="text-silver text-sm mb-2 italic">
-              {stripHtml(article.content).slice(0, 150)}
-              {stripHtml(article.content).length > 150 ? "..." : ""}
-            </p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={onEdit}
-            className="px-4 py-2 bg-gold text-black rounded hover:bg-[#b8941e] transition-colors text-sm font-semibold"
-          >
-            Edit
-          </button>
-          <button
-            onClick={onDelete}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-semibold"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-      <div className="text-sm text-silver">
-        📅 {formatDate(article.createdAt)}
-      </div>
-    </div>
   );
 }
