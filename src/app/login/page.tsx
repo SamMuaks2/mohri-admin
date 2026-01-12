@@ -152,6 +152,7 @@ export default function LoginPage() {
   // Checking if already authenticated
   useEffect(() => {
     if (isAuthenticated()) {
+      console.log("Already authenticated, redirecting...");
       router.replace("/dashboard");
     }
   }, [router]);
@@ -165,11 +166,9 @@ export default function LoginPage() {
 
       console.log("🔐 Starting login...");
       console.log("📍 API URL:", process.env.NEXT_PUBLIC_API_URL);
-      console.log("📧 Email:", email);
-      console.log("🌍 Environment:", process.env.NODE_ENV);
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/login`;
-      console.log("🌐 Full URL:", url);
+      console.log("🌐 Request URL:", url);
 
       const res = await fetch(url, {
         method: "POST",
@@ -177,14 +176,10 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         credentials: 'include',
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       console.log("📥 Response status:", res.status);
-      console.log("📥 Response ok:", res.ok);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ 
@@ -196,32 +191,34 @@ export default function LoginPage() {
 
       const data = await res.json();
       console.log("✅ Login successful");
-      console.log("📦 Response data:", data);
-      console.log("📦 Response headers:", [...res.headers.entries()]);
 
       if (!data.access_token) {
         console.error("❌ No access_token in response!");
         throw new Error("No token received");
       }
 
-      // Setting auth flag
+      // CRITICAL: Storing token in localStorage
+      console.log("💾 Storing token in localStorage...");
       setToken(data.access_token);
-      console.log("✅ Auth flag set");
       
-      // Checking cookies
-      console.log("🍪 All cookies:", document.cookie);
+      // Verifying it was stored
+      const stored = localStorage.getItem('__app_auth_token__');
+      console.log("✅ Token stored:", stored ? "YES" : "NO");
       
-      // Waiting a bit for cookie to be set
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log("🍪 Cookies after wait:", document.cookie);
+      if (!stored) {
+        throw new Error("Failed to store authentication token");
+      }
       
-      // Forcing navigation
+      // Adding small delay to ensure state is fully updated
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       console.log("🚀 Redirecting to dashboard...");
+      // Using window.location for a hard redirect
       window.location.href = "/dashboard";
       
     } catch (error: any) {
       console.error("❌ Login error:", error);
-      setError(error.message || "Login failed. Please check the console for details.");
+      setError(error.message || "Login failed. Please try again.");
       setLoading(false);
     }
   };
