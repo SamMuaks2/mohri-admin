@@ -139,8 +139,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { isAuthenticated, setToken } from "../../lib/auth";
+import { useState } from "react";
+import { setToken } from "../../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -148,24 +148,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Checking if already authenticated
-  useEffect(() => {
-    const checkAuth = () => {
-      const hasAuth = isAuthenticated();
-      console.log("Login page - Auth check:", hasAuth);
-      
-      if (hasAuth) {
-        console.log("Already authenticated, redirecting...");
-        // Using replace to avoid back button issues
-        router.replace("/dashboard");
-      }
-    };
-    
-    // Adding small delay to ensure storage is ready
-    const timer = setTimeout(checkAuth, 100);
-    return () => clearTimeout(timer);
-  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,11 +157,9 @@ export default function LoginPage() {
       setError("");
 
       console.log("🔐 Starting login...");
-      console.log("📍 API URL:", process.env.NEXT_PUBLIC_API_URL);
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/login`;
-      console.log("🌐 Request URL:", url);
-
+      
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -207,23 +187,13 @@ export default function LoginPage() {
         throw new Error("No token received");
       }
 
-      // CRITICAL: Storing token in localStorage
-      console.log("💾 Storing token in localStorage...");
+      // Storing token in localStorage
+      console.log("💾 Storing token...");
       setToken(data.access_token);
       
-      // Verifying it was stored immediately
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const stored = localStorage.getItem('__app_auth_token__');
-      console.log("✅ Token stored verification:", stored ? "YES" : "NO");
+      console.log("🚀 Redirecting to dashboard...");
       
-      if (!stored) {
-        console.error("❌ Token storage failed!");
-        throw new Error("Failed to store authentication token");
-      }
-      
-      console.log("🚀 Auth successful, forcing page reload to dashboard...");
-      
-      // Forcing a complete page reload to the dashboard
+      // Using window.location for a hard redirect that will trigger middleware
       window.location.href = "/dashboard";
       
     } catch (error: any) {
