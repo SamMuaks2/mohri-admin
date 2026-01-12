@@ -1,9 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import { apiClient } from "../../lib/api";
-import QuillEditor from "../../components/ProTextEditor";
+
+// Dynamic import to prevent SSR issues
+const QuillEditor = dynamic(() => import("../../components/ProTextEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="border-2 border-gold rounded p-4 bg-black">
+      <div className="text-silver">Loading editor...</div>
+    </div>
+  ),
+});
 
 interface Article {
   _id: string;
@@ -15,7 +25,6 @@ interface Article {
   createdAt: string;
 }
 
-/* ---------- SSR-SAFE HTML STRIP ---------- */
 const stripHtml = (html: string) => {
   if (!html) return "";
   return html
@@ -129,7 +138,6 @@ export default function ArticlesPage() {
   return (
     <ProtectedRoute>
       <div className="h-screen overflow-y-auto p-6">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl text-gold font-bold">Articles</h2>
           <button
@@ -143,7 +151,6 @@ export default function ArticlesPage() {
           </button>
         </div>
 
-        {/* Filters */}
         <div className="flex gap-4 mb-6">
           <input
             className="flex-1 px-4 py-2 bg-black border border-gold text-white"
@@ -162,7 +169,6 @@ export default function ArticlesPage() {
           </select>
         </div>
 
-        {/* List */}
         {loading && <p className="text-silver">Loading…</p>}
         {error && <p className="text-red-500">{error}</p>}
 
@@ -209,7 +215,6 @@ export default function ArticlesPage() {
           ))}
         </div>
 
-        {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/80 flex justify-center items-start p-6 z-50 overflow-y-auto">
             <div className="bg-black border-2 border-gold p-8 rounded w-full max-w-5xl">
