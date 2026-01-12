@@ -21,7 +21,7 @@ export default function Sidebar() {
       {/* Mobile Top Bar */}
       <div className="md:hidden flex items-center justify-between bg-black border-b border-gold px-4 py-3">
         <div className="text-white font-bold text-lg">
-          Mohri Admin<span className="text-gold">.</span>
+          Mohri<span className="text-gold">.</span>
         </div>
         <button onClick={() => setOpen(true)}>
           {/* Hamburger icon */}
@@ -57,7 +57,7 @@ export default function Sidebar() {
       >
         <div className="flex items-center justify-between p-6 border-b border-gold">
           <div className="font-bold text-xl text-white">
-            Admin<span className="text-gold">.</span>
+            Mohri<span className="text-gold">.</span>
           </div>
 
           <button className="md:hidden" onClick={() => setOpen(false)}>
