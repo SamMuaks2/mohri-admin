@@ -139,8 +139,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { setToken } from "../../lib/auth";
+import { useState, useEffect } from "react";
+import { setToken, isAuthenticated } from "../../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -148,6 +148,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Checking if already authenticated
+  useEffect(() => {
+    console.log("🔐 Login page: Checking if already authenticated");
+    
+    const checkAuth = () => {
+      if (isAuthenticated()) {
+        console.log("✅ Already authenticated, redirecting to dashboard");
+        router.replace("/dashboard");
+      } else {
+        console.log("❌ Not authenticated, showing login form");
+        setChecking(false);
+      }
+    };
+
+    // Adding small delay to ensure localStorage is ready
+    const timer = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,10 +211,19 @@ export default function LoginPage() {
       console.log("💾 Storing token...");
       setToken(data.access_token);
       
+      // Verifying storage
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const stored = localStorage.getItem('__app_auth_token__');
+      console.log("✅ Token stored:", stored ? "YES" : "NO");
+      
+      if (!stored) {
+        throw new Error("Failed to store authentication token");
+      }
+      
       console.log("🚀 Redirecting to dashboard...");
       
-      // Using window.location for a hard redirect that will trigger middleware
-      window.location.href = "/dashboard";
+      // Using router.push for client-side navigation
+      router.push("/dashboard");
       
     } catch (error: any) {
       console.error("❌ Login error:", error);
@@ -202,6 +231,18 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Showing loading while checking auth
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-silver text-lg">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
